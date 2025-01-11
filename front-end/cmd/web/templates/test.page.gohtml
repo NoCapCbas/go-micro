@@ -7,6 +7,7 @@
                 <h1 class="mt-5">Test microservices</h1>
                 <hr>
                 <a id="broker-btn" class="btn btn-secondary" href="javascript:void(0)">Test Broker</a>
+                <a id="auth-btn" class="btn btn-secondary" href="javascript:void(0)">Test Auth</a>
 
                 <div id="output" class="mt-5" style="outline: 1px solid silver; padding: 2em;">
                     <span class="text-muted">Output shows here...</span>
@@ -33,9 +34,47 @@
 {{define "js"}}
     <script>
     let brokerBtn = document.getElementById("broker-btn");
+    let authBtn = document.getElementById("auth-btn");
     let output = document.getElementById("output");
     let sent = document.getElementById("sent");
     let received = document.getElementById("received");
+
+    
+    authBtn.addEventListener("click", function() {
+        const payload = {
+            action: "auth",
+            auth: {
+                email: "admin@example.com",
+                password: "verysecretss"
+            }
+        }
+
+        const headers = new Headers();
+        headers.append("Content-Type", "application/json");
+
+        const body = {
+            method: "POST",
+            headers: headers,
+            body: JSON.stringify(payload)
+        }
+
+        fetch("http:\/\/localhost:8080/handle", body)
+        .then(res => res.json())
+        .then(data => {
+            sent.innerHTML = JSON.stringify(payload, undefined, 4);
+            received.innerHTML = JSON.stringify(data, undefined, 4);
+            if (data.error) {
+                output.innerHTML += `<br><strong>Server Error</strong>: ${data.message}`;
+            } else {
+                output.innerHTML += `<br><strong>Response from broker</strong>: ${data.message}`;
+            }
+        })
+        .catch(err => {
+            output.innerHTML += `<br><strong>Client Error</strong>: ${err.message}`;
+        })
+
+    })
+
 
     brokerBtn.addEventListener("click", function() {
         const body = {
@@ -54,13 +93,13 @@
             sent.innerHTML = "empty post request sent";
             received.innerHTML = JSON.stringify(data, undefined, 4);
             if (data.error) {
-                console.log(data.message);
+                console.log('server error', data.message);
             } else {
                 output.innerHTML += `<br><strong>Response from broker</strong>: ${data.message}`;
             }
         })
         .catch(err => {
-            output.innerHTML += `<br><strong>Error</strong>: ${err.message}`;
+            output.innerHTML += `<br><strong>Client Error</strong>: ${err.message}`;
         })
 
     })
