@@ -1,4 +1,18 @@
 services:
+  front-end:
+    build:
+      context: ./../front-end
+      dockerfile: ./../front-end/front.dockerfile
+    restart: always
+    ports:
+      - "8082:80"
+    depends_on:
+      - authentication-service
+      - broker-service
+    deploy:
+      mode: replicated
+      replicas: 1
+
   broker-service:
     build:
       context: ./../broker-service
@@ -6,6 +20,53 @@ services:
     restart: always
     ports:
       - "8080:80"
+    depends_on:
+      - postgres
     deploy:
       mode: replicated
       replicas: 1
+
+  authentication-service:
+    build:
+      context: ./../authentication-service
+      dockerfile: ./../authentication-service/authentication.dockerfile
+    restart: always
+    ports:
+      - "8081:80"
+    depends_on:
+      - postgres
+    deploy:
+      mode: replicated
+      replicas: 1
+    environment:
+      DSN: "host=postgres port=5432 user=postgres password=postgres dbname=users sslmode=disable timezone=UTC connect_timeout=5"
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=users
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./db-data/postgres/data:/var/lib/postgresql/data
+    deploy:
+      mode: replicated
+      replicas: 1
+
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@admin.com
+      - PGADMIN_DEFAULT_PASSWORD=password
+    ports:
+      - "8083:80"
+    depends_on:
+      - postgres
+    volumes:
+      - ./db-data/pgadmin:/root/.pgadmin
+    deploy:
+      mode: replicated
+      replicas: 1
+
